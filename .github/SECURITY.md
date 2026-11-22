@@ -2,8 +2,8 @@
 
 ## Reporting a Vulnerability
 
-Please do not report security vulnerabilities through public GitHub issues.
+Do not report security vulnerabilities through public GitHub issues.
 
-Instead, report them via GitHub's private [Security Advisories](../../security/advisories/new) feature. Include as much detail as possible: a description of the issue, steps to reproduce, and potential impact.
+Report vulnerabilities through GitHub's private [Security Advisories](https://github.com/ranajahanzaib/microbial-ecology-map/security/advisories/new) feature. Include a description, reproduction steps, and potential impact. If private vulnerability reporting is unavailable, contact the repository owner through [GitHub](https://github.com/ranajahanzaib).
 
-You can expect an acknowledgment within 48 hours and a resolution timeline once the issue is confirmed.
+Response time depends on severity and maintainer availability. Acknowledgment and any remediation timeline will be shared after triage.

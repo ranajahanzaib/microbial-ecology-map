@@ -1,10 +1,12 @@
-Fixes #<issue_number_goes_here>
+## Summary
 
-> It's a good idea to open an issue first for discussion.
+Describe the change and the reason for it.
 
-**Description**
-A brief summary of what this PR does and why.
+## Validation
 
-- [ ] Tests pass
-- [ ] README updated if needed
-- [ ] No breaking changes (or described below)
+- [ ] Tests pass, or validation limitations are described below.
+- [ ] Documentation is updated where needed.
+- [ ] Scientific methods and data provenance are preserved.
+- [ ] Breaking changes are described below.
+
+## Additional context
