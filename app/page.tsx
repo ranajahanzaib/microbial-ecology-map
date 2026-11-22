@@ -246,6 +246,7 @@ export default function Home() {
   const [busy, setBusy] = useState(true);
   const [apiOnline, setApiOnline] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
   const [timeline, setTimeline] = useState<{ year: string; samples: number }[]>(
     [],
   );
@@ -309,27 +310,33 @@ export default function Home() {
   }, [search]);
   useEffect(() => {
     if (!mapNode.current || mapRef.current) return;
-    const map = new maplibregl.Map({
-      container: mapNode.current,
-      style: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
-      center: [12, 20],
-      zoom: 1.5,
-      minZoom: 1.2,
-      maxZoom: 15,
-      attributionControl: false,
-    });
-    const overlay = new MapLibreOverlay({ interleaved: true, layers: [] });
-    const onZoom = () => setMapZoom(map.getZoom());
-    map.on("zoomend", onZoom);
-    map.addControl(overlay as never);
-    mapRef.current = map;
-    overlayRef.current = overlay;
-    return () => {
-      map.off("zoomend", onZoom);
-      map.remove();
-      mapRef.current = null;
-      overlayRef.current = null;
-    };
+    try {
+      const map = new maplibregl.Map({
+        container: mapNode.current,
+        style:
+          "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+        center: [12, 20],
+        zoom: 1.5,
+        minZoom: 1.2,
+        maxZoom: 15,
+        attributionControl: false,
+      });
+      const overlay = new MapLibreOverlay({ interleaved: true, layers: [] });
+      const onZoom = () => setMapZoom(map.getZoom());
+      map.on("zoomend", onZoom);
+      map.addControl(overlay as never);
+      mapRef.current = map;
+      overlayRef.current = overlay;
+      return () => {
+        map.off("zoomend", onZoom);
+        map.remove();
+        mapRef.current = null;
+        overlayRef.current = null;
+      };
+    } catch (err) {
+      console.warn("Map initialization failed:", err);
+      setMapError("WebGL2 is required to display the interactive map.");
+    }
   }, []);
   const visible = useMemo(
     () =>
@@ -619,7 +626,9 @@ export default function Home() {
                 </span>
                 <span>{h}</span>
                 {h === "All habitats" && (
-                  <small>{overview.unique_samples.toLocaleString()}</small>
+                  <small>
+                    {(overview.unique_samples ?? 0).toLocaleString()}
+                  </small>
                 )}
               </button>
             ))}
@@ -637,8 +646,8 @@ export default function Home() {
             <span>ANALYSIS TYPE</span>
           </div>
           <div className="filter-note">
-            {overview.taxonomy_profiles
-              ? `${overview.taxonomy_profiles.toLocaleString()} V6 amplicon taxonomy profiles parsed. Profiles remain separate by reference database; functional profiles are not yet available.`
+            {overview.taxonomy_profiles || overview.functional_profiles
+              ? `${(overview.taxonomy_profiles ?? 0).toLocaleString()} V6 amplicon taxonomy profiles and ${(overview.functional_profiles ?? 0).toLocaleString()} functional profiles parsed. Profiles remain separate by reference database.`
               : "No processed taxonomic or functional profiles have been imported yet."}
           </div>
           <div className="filter-foot">
@@ -646,7 +655,8 @@ export default function Home() {
             <div>
               <span className={`dot ${apiOnline ? "good" : ""}`} />
               {apiOnline
-                ? overview.unique_samples.toLocaleString() + " samples loaded"
+                ? (overview.unique_samples ?? 0).toLocaleString() +
+                  " samples loaded"
                 : "No local records loaded"}
             </div>
             <small>MGnify API v2 · source and methods retained</small>
@@ -680,7 +690,11 @@ export default function Home() {
                   ? "Explore where microbial life has been sampled across the biosphere."
                   : panel === "Data"
                     ? "Inspect what the current local dataset contains and where records are incomplete."
-                    : "Only source-derived analysis results will appear here; no profiles have been imported yet."}
+                    : panel === "Taxonomy"
+                      ? "Inspect parsed V6 amplicon taxonomy profiles and alpha diversity metrics."
+                      : panel === "Functions"
+                        ? "Inspect parsed V6 assembly functional summaries (Pfam, KEGG Orthology, InterPro)."
+                        : "Compare compatible V6 amplicon profiles using Bray–Curtis dissimilarity and Jaccard similarity."}
               </p>
             </div>
             <button className="layer-button">
@@ -730,50 +744,61 @@ export default function Home() {
                   </p>
                   <div className="coverage-grid">
                     <div>
-                      <b>{overview.unique_samples.toLocaleString()}</b>
+                      <b>{(overview.unique_samples ?? 0).toLocaleString()}</b>
                       <span>unique samples</span>
                     </div>
                     <div>
-                      <b>{overview.studies.toLocaleString()}</b>
+                      <b>{(overview.studies ?? 0).toLocaleString()}</b>
                       <span>studies</span>
                     </div>
                     <div>
-                      <b>{overview.georeferenced.toLocaleString()}</b>
+                      <b>{(overview.georeferenced ?? 0).toLocaleString()}</b>
                       <span>valid coordinates</span>
                     </div>
                     <div>
                       <b>
                         {(
-                          overview.unique_samples - overview.georeferenced
+                          (overview.unique_samples ?? 0) -
+                          (overview.georeferenced ?? 0)
                         ).toLocaleString()}
                       </b>
                       <span>without coordinates</span>
                     </div>
                     <div>
-                      <b>{overview.taxonomy_profiles.toLocaleString()}</b>
+                      <b>
+                        {(overview.taxonomy_profiles ?? 0).toLocaleString()}
+                      </b>
                       <span>taxonomy profiles parsed</span>
                     </div>
                     <div>
-                      <b>{overview.taxonomy_observations.toLocaleString()}</b>
+                      <b>
+                        {(overview.taxonomy_observations ?? 0).toLocaleString()}
+                      </b>
                       <span>taxonomy rows</span>
                     </div>
                     <div>
-                      <b>{overview.functional_profiles.toLocaleString()}</b>
+                      <b>
+                        {(overview.functional_profiles ?? 0).toLocaleString()}
+                      </b>
                       <span>functional profiles parsed</span>
                     </div>
                     <div>
-                      <b>{overview.functional_observations.toLocaleString()}</b>
+                      <b>
+                        {(
+                          overview.functional_observations ?? 0
+                        ).toLocaleString()}
+                      </b>
                       <span>functional rows</span>
                     </div>
                     <div>
-                      <b>{overview.analysis_records.toLocaleString()}</b>
+                      <b>{(overview.analysis_records ?? 0).toLocaleString()}</b>
                       <span>analysis records linked</span>
                     </div>
                   </div>
                   <p className="mode-foot">
                     Analysis discovery checked{" "}
-                    {overview.checked_studies.toLocaleString()} of{" "}
-                    {overview.studies.toLocaleString()} sample studies
+                    {(overview.checked_studies ?? 0).toLocaleString()} of{" "}
+                    {(overview.studies ?? 0).toLocaleString()} sample studies
                     {overview.analysis_discovery_complete
                       ? ""
                       : " · discovery is incomplete"}
@@ -790,12 +815,16 @@ export default function Home() {
                 <>
                   <h3>
                     {panel === "Taxonomy"
-                      ? "Select a sample to inspect parsed taxonomy"
+                      ? selected
+                        ? `Taxonomy for ${selected.accession}`
+                        : "Select a sample to inspect parsed taxonomy"
                       : panel === "Functions"
-                        ? overview.functional_profiles
-                          ? "Select a sample to inspect parsed annotations"
-                          : "No functional profiles parsed yet"
-                        : "No comparable sample profiles selected"}
+                        ? selected
+                          ? `Functional annotations for ${selected.accession}`
+                          : overview.functional_profiles
+                            ? "Select a sample to inspect parsed annotations"
+                            : "No functional profiles parsed yet"
+                        : "Community comparison"}
                   </h3>
                   <p>
                     {panel === "Taxonomy"
@@ -805,11 +834,43 @@ export default function Home() {
                         : "Community comparisons require compatible analysis methods, reference databases, and feature semantics. The current data has not been combined across profiles."}
                   </p>
                   <code>
-                    {overview.analysis_records.toLocaleString()} linked analyses
-                    · {overview.taxonomy_profiles.toLocaleString()} taxonomy
-                    profiles · {overview.functional_profiles.toLocaleString()}{" "}
+                    {(overview.analysis_records ?? 0).toLocaleString()} linked
+                    analyses ·{" "}
+                    {(overview.taxonomy_profiles ?? 0).toLocaleString()}{" "}
+                    taxonomy profiles ·{" "}
+                    {(overview.functional_profiles ?? 0).toLocaleString()}{" "}
                     functional profiles
                   </code>
+                  {panel === "Taxonomy" && !selected && (
+                    <div className="compare-selected" style={{ marginTop: 12 }}>
+                      <button
+                        type="button"
+                        className="subtle-button"
+                        onClick={() => {
+                          fetch(`${API}/samples/SAMEA115409203`)
+                            .then((r) => (r.ok ? r.json() : null))
+                            .then((s) => s && setSelected(s));
+                        }}
+                      >
+                        Inspect example taxonomy sample (SAMEA115409203)
+                      </button>
+                    </div>
+                  )}
+                  {panel === "Functions" && !selected && (
+                    <div className="compare-selected" style={{ marginTop: 12 }}>
+                      <button
+                        type="button"
+                        className="subtle-button"
+                        onClick={() => {
+                          fetch(`${API}/samples/SAMN05518500`)
+                            .then((r) => (r.ok ? r.json() : null))
+                            .then((s) => s && setSelected(s));
+                        }}
+                      >
+                        Inspect example functional sample (SAMN05518500)
+                      </button>
+                    </div>
+                  )}
                   {panel === "Compare" && (
                     <form
                       className="compare-form"
@@ -846,6 +907,24 @@ export default function Home() {
                           .finally(() => setComparing(false));
                       }}
                     >
+                      <div
+                        className="compare-selected"
+                        style={{ marginBottom: 10 }}
+                      >
+                        <button
+                          type="button"
+                          className="subtle-button"
+                          onClick={() => {
+                            setCompareA("SAMEA115409238");
+                            setCompareB("SAMEA115409250");
+                            setCompareDatabase("SILVA-SSU");
+                            setCompareMarker("16S-V3-V4");
+                            setCompareRank("Genus");
+                          }}
+                        >
+                          Load example pair (SAMEA115409238 vs SAMEA115409250)
+                        </button>
+                      </div>
                       <label>
                         Sample A accession
                         <input

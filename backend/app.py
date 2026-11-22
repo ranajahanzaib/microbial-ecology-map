@@ -192,8 +192,8 @@ def community_comparison(sample_a: str, sample_b: str, reference_database: str, 
         raise HTTPException(404,"Parsed, method-compatible profiles are not available")
     for sample in (sample_a,sample_b):
         if not query("SELECT accession FROM samples WHERE accession = ?",[sample]): raise HTTPException(404,f"Sample {sample} not found")
-    profile_sql="""SELECT DISTINCT t.analysis_accession,
-        regexp_extract(d.alias,'^[^_]+_(.*)_asv_read_counts\\.tsv$',1) AS marker_region
+    profile_sql = r"""SELECT DISTINCT t.analysis_accession,
+        regexp_extract(d.alias,'^[^_]+_(.*)_asv_read_counts\.tsv$',1) AS marker_region
         FROM taxonomy_observations t JOIN analyses a ON a.accession=t.analysis_accession
         JOIN analysis_downloads d ON d.analysis_accession=a.accession
         WHERE t.sample_accession = ? AND t.reference_database = ? AND a.pipeline_version LIKE 'V6%'
