@@ -74,3 +74,13 @@ yarn-error.log*
 venv
 
 PLAN.md
+
+# Python runtime
+.venv
+venv/
+__pycache__/
+*.py[cod]
+
+# Local source data, caches, and generated databases
+data/*
+!data/.gitkeep

@@ -1,0 +1,36 @@
+{
+  "name": "microbial-atlas",
+  "version": "0.1.0",
+  "description": "A map-first explorer for public environmental microbiome records",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ranajahanzaib/microbial-ecology-map.git"
+  },
+  "private": true,
+  "packageManager": "pnpm@10.6.3",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "api": ".venv/bin/uvicorn backend.app:app --reload",
+    "ingest": ".venv/bin/python -m backend.ingest",
+    "test": ".venv/bin/python -m unittest discover -s tests"
+  },
+  "dependencies": {
+    "@deck.gl/core": "^9.3.0",
+    "@deck.gl/layers": "^9.3.0",
+    "@deck.gl/maplibre": "^9.4.1",
+    "lucide-react": "^0.577.0",
+    "maplibre-gl": "^6.19.0",
+    "next": "^16.1.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "typescript": "^5.9.0"
+  }
+}
