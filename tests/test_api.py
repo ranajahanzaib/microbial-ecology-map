@@ -125,6 +125,44 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(response.status_code,200)
         self.assertEqual([item["accession"] for item in response.json()["items"]],["SAMEA_WEST"])
 
+    def test_sample_detail_with_study_and_analysis_counts(self):
+        response = self.client.get("/api/v1/samples/SAMEA_TEST")
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(body["accession"], "SAMEA_TEST")
+        self.assertEqual(body["analysis_count"], 1)
+        self.assertTrue(body["analyses_checked"])
+        self.assertIsNotNone(body["study"])
+        self.assertEqual(body["study"]["title"], "Marine test study")
+
+    def test_study_detail_aggregations(self):
+        response = self.client.get("/api/v1/studies/MGYS_TEST")
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(body["accession"], "MGYS_TEST")
+        self.assertEqual(body["sample_count"], 1)
+        self.assertEqual(body["analysis_count"], 1)
+
+    def test_analysis_downloads_metadata(self):
+        with duckdb.connect(str(api.DB)) as con:
+            con.execute("INSERT INTO analysis_downloads VALUES ('MGYA_TEST','tsv','Sequence data','Raw data','ERRTEST_seqs.fastq.gz',NULL,1024,'https://example.invalid/seqs',NULL)")
+        response = self.client.get("/api/v1/analyses/MGYA_TEST/downloads")
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertTrue(body["raw_sequence_files_excluded_from_profile_candidates"])
+        self.assertTrue(any(d["alias"] == "ERRTEST_seqs.fastq.gz" for d in body["items"]))
+
+    def test_community_comparison_rejects_identical_samples(self):
+        response = self.client.get("/api/v1/community-comparison?sample_a=SAMEA_TEST&sample_b=SAMEA_TEST&reference_database=SILVA-SSU&rank=Genus")
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("Choose two different physical samples", response.json()["detail"])
+
+    def test_data_sources_endpoint(self):
+        response = self.client.get("/api/v1/data-sources")
+        self.assertEqual(response.status_code, 200)
+        sources = [s["name"] for s in response.json()["sources"]]
+        self.assertIn("MGnify API v2", sources)
+
 
 if __name__ == "__main__":
     unittest.main()
